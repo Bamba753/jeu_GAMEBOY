@@ -6,6 +6,9 @@ Game::Game()
 	this->initVariables();
 	this->initWindow();
 	this->initEnemy();
+	this->initFonts();
+	this->initText();
+
 }
 
 // Destructeurs
@@ -23,6 +26,8 @@ void Game::initVariables()
 	this->enemySpawnTimer = this->enemySpawnTimerMax;
 	this->maxEnemies = 5;
 	this->mousehold = false;
+	this->health = 10;
+	this->endGame = false;
 }
 
 void Game::initWindow()
@@ -43,6 +48,20 @@ void Game::initEnemy()
 	this->enemy.setOutlineThickness(1.f);
 }
 
+void Game::initFonts()
+{
+	if (this->font.loadFromFile("Fonts/Dosis-Light.ttf"))
+		std::cout << "Error failed load fonts";
+
+}
+
+void Game::initText()
+{
+	this->uiText.setFont(this->font);
+	this->uiText.setCharacterSize(36);
+	this->uiText.setFillColor(sf::Color::White);
+	this->uiText.setString("None");
+}
 
 void Game::pollevent()
 {
@@ -99,36 +118,37 @@ void Game::updateEnemies()
 	{
 		this->enemies[i].move(0.f, 1.0f);
 
-		// Delete if click upon
-		deleted = false;
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+		if (this->enemies[i].getPosition().y > this->window->getSize().y)
 		{
-			if (this->mousehold == false)
+			this->enemies.erase(this->enemies.begin() + i);
+			this->health -= 1;
+		}
+	}
+
+	// Delete if click upon
+	if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+	{
+		bool deleted = false;
+		if (this->mousehold == false)
+		{
+			this->mousehold = true;
+			for (int i = 0; i < this->enemies.size() && deleted == false; i++)
 			{
-				this->mousehold = true;
+				
 				if (this->enemies[i].getGlobalBounds().contains(this->mousePosView))
 				{
 					deleted = true;
-
+					this->enemies.erase(this->enemies.begin() + i);
 					// Gain points
-					this->points += 10;
+					this->points += 1;
+					std::cout << "points : " << points << std::endl;
 				}
 			}
 		}
-		else
-			this->mousehold = false;
-
-
-		std::cout << this->points <<std::endl;
-		// Delete at the edge of the screen
-		if (this->enemies[i].getPosition().y > this->window->getSize().y)
-		{
-			deleted = true;
-		}
-
-		if (deleted)
-			this->enemies.erase(this->enemies.begin() + i);
 	}
+	else
+		this->mousehold = false;
+
 }
 
 
@@ -158,23 +178,47 @@ bool Game::running() const
 	return (this->window)->isOpen();
 }
 
+bool Game::endGameState() const
+{
+	return this->endGame;
+}
+
 // Fonctions
 void Game::update()
 {
 	this->pollevent();
+	if (!endGame)
+	{
+		this->updateMousePosition();
+		this->updateText();
+		this->updateEnemies();
+	}
 
-	this->updateMousePosition();
-	this->updateEnemies();
+	if (this->health <= 0)
+		this->endGame = true;
 }
 
 
 
-void Game::renderEnemies()
+void Game::renderEnemies(sf::RenderTarget& target)
 {
 	for (auto& i : this->enemies)
 	{
-		this->window->draw(i);
+		target.draw(i);
 	}
+}
+
+void Game::renderText(sf::RenderTarget& target)
+{
+	target.draw(this->uiText);
+}
+
+void Game::updateText()
+{
+	std::stringstream ss;
+	ss << "Points : " << this->points << "\n"
+		<< "Health : " << this ->health;
+	this->uiText.setString(ss.str());
 }
 
 
@@ -187,7 +231,7 @@ void Game::render()
 	this->window->clear();
 
 	// Draw objects
-	this->renderEnemies();
-
+	this->renderEnemies(*this->window);
+	this->renderText(*this->window);
 	this->window->display();
 }

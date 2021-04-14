@@ -9,6 +9,7 @@
 #include <SFML/Window.hpp>
 #include <vector>
 #include <ctime>
+#include <sstream>
 
 /*
 .   Classe principale du jeu
@@ -29,11 +30,19 @@ class Game
 	sf::RectangleShape enemy;
 	
 	// Game logic
+	bool endGame;
 	unsigned points;
+	int health;
 	float enemySpawnTimer;
 	float enemySpawnTimerMax;
 	int maxEnemies;
 	bool mousehold;
+	
+	//Ressources
+	sf::Font font;
+
+	// Text
+	sf::Text uiText;
 
 	// Mouse positions
 	sf::Vector2i mousePosWindow;
@@ -43,6 +52,8 @@ class Game
 	void initVariables();
 	void initWindow();
 	void initEnemy();
+	void initFonts();
+	void initText();
 public:
 	// Cosntructeurs
 	Game();
@@ -56,9 +67,12 @@ public:
 	void updateMousePosition();
 	void spawnEnemies();
 	void updateEnemies();
-	void renderEnemies();
+	void renderEnemies(sf::RenderTarget& target);
+	void renderText(sf::RenderTarget& target);
+	void updateText();
 	// Accesseurs
 	bool running() const;
+	bool endGameState() const;
 };
 
 #endif
